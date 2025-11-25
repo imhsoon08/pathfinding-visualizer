@@ -1,250 +1,365 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>경로 탐색 시각화</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<style>
-:root{
-  --bg:#f5f7fb; --card:#ffffff; --accent:#4c7fff; --muted:#6b7280;
-  --visited:#74b9ff; --path:#fdcb6e; --wall:#111827;
-}
-*{box-sizing:border-box;}
-body{
-  font-family:'Inter',system-ui,Arial,sans-serif; background:var(--bg);
-  margin:0; color:#111827; -webkit-font-smoothing:antialiased;
-}
-header{padding:28px 20px;text-align:center}
-h1{margin:0;font-size:28px}
-.container{max-width:1100px;margin:18px auto;padding:18px}
-.controls{
-  display:flex;gap:12px;flex-wrap:wrap;justify-content:center;
-  background:var(--card);padding:12px;border-radius:12px;
-  box-shadow:0 6px 18px rgba(16,24,40,0.06);
-  align-items:center;
-}
-.controls .group{display:flex;gap:8px;align-items:center}
-label{font-size:13px;color:var(--muted)}
-input[type=number], select, input[type=range], button{
-  padding:8px 10px;border-radius:8px;border:1px solid #e6e9f2;background:white;font-size:14px;
-}
-button{background:var(--accent);color:white;border:none;cursor:pointer;transition:all .18s}
-button.secondary{background:#fff;color:var(--accent);border:1px solid #dfe7ff}
-button:active{transform:translateY(1px)}
-main{display:flex;gap:18px;padding-top:18px;flex-wrap:wrap;justify-content:center}
-.card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(16,24,40,0.06)}
-#grid-wrap{width:640px;max-width:92vw;height:640px;display:flex;align-items:center;justify-content:center}
-#grid{
-  display:grid;border-radius:8px;overflow:hidden;width:100%;height:100%;
-  background:linear-gradient(180deg,#fafafa,#fff);
-  box-shadow:inset 0 0 0 1px rgba(16,24,40,0.04);
-}
-.cell{
-  border:1px solid rgba(16,24,40,0.04);
-  background:#fff;
-  transition:background .12s linear, transform .08s;
-  width:100%;height:100%;
-}
-.cell:hover{transform:scale(1.02)}
-.cell.start{background:#10b981 !important}
-.cell.end{background:#ef4444 !important}
-.cell.wall{background:var(--wall) !important}
-.cell.visited{background:var(--visited) !important}
-.cell.path{background:var(--path) !important}
-#right{width:360px;max-width:92vw;display:flex;flex-direction:column;gap:12px;}
-.metrics{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between}
-.metric{background:#fbfdff;padding:10px;border-radius:10px;min-width:48%;text-align:center;border:1px solid rgba(16,24,40,0.03)}
-.metric h3{margin:0;font-size:14px;color:var(--muted)}
-.metric p{margin:6px 0 0;font-size:18px;font-weight:600}
-canvas{background:#fff;border-radius:10px;padding:12px}
-@media (max-width:980px){
-  main{flex-direction:column;align-items:center}
-  #right{width:92vw}
-  #grid-wrap{height:min(72vw,640px)}
-}
-.value-display{margin-left:6px;font-weight:600}
-</style>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>경로 탐색 시각화</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#f5f7fb;
+      --card:#ffffff;
+      --accent:#4c7fff;
+      --muted:#6b7280;
+      --visited:#74b9ff;
+      --path:#fdcb6e;
+      --wall:#111827;
+    }
+    *{box-sizing:border-box;}
+    body{
+      font-family:'Inter',system-ui,Arial,sans-serif;
+      background:var(--bg);
+      margin:0;
+      color:#111827;
+      -webkit-font-smoothing:antialiased;
+    }
+    header{padding:28px 20px;text-align:center;}
+    h1{margin:0;font-size:28px;}
+    .container{max-width:1100px;margin:18px auto;padding:18px;}
+    .controls{
+      display:flex;gap:12px;flex-wrap:wrap;justify-content:center;
+      background:var(--card);padding:12px;border-radius:12px;box-shadow:0 6px 18px rgba(16,24,40,0.06);
+      align-items:center;
+    }
+    .controls .group{display:flex;gap:8px;align-items:center;}
+    label{font-size:13px;color:var(--muted);}
+    input[type=number], select, input[type=range], button{
+      padding:8px 10px;border-radius:8px;border:1px solid #e6e9f2;background:white;font-size:14px;
+    }
+    button{background:var(--accent);color:white;border:none;cursor:pointer;transition:all .18s;}
+    button.secondary{background:#fff;color:var(--accent);border:1px solid #dfe7ff;}
+    button:active{transform:translateY(1px);}
+    main{display:flex;gap:18px;padding-top:18px;flex-wrap:wrap;justify-content:center;}
+    .card{background:var(--card);padding:14px;border-radius:12px;box-shadow:0 6px 18px rgba(16,24,40,0.06);}
+    #grid-wrap{width:640px;max-width:92vw;height:640px;display:flex;align-items:center;justify-content:center;}
+    #grid{
+      display:grid;border-radius:8px;overflow:hidden;width:100%;height:100%;
+      background:linear-gradient(180deg,#fafafa,#fff);
+      box-shadow:inset 0 0 0 1px rgba(16,24,40,0.04);
+    }
+    .cell{
+      border:1px solid rgba(16,24,40,0.04);
+      background:#fff;
+      transition:background .12s linear, transform .08s;
+      width:100%;height:100%;
+    }
+    .cell:hover{transform:scale(1.02);}
+    .cell.start{background:#10b981 !important;}
+    .cell.end{background:#ef4444 !important;}
+    .cell.wall{background:var(--wall) !important;}
+    .cell.visited{background:var(--visited) !important;}
+    .cell.path{background:var(--path) !important;}
+    #right{
+      width:360px;max-width:92vw;display:flex;flex-direction:column;gap:12px;
+    }
+    .metrics{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between;}
+    .metric{background:#fbfdff;padding:10px;border-radius:10px;min-width:48%;text-align:center;border:1px solid rgba(16,24,40,0.03);}
+    .metric h3{margin:0;font-size:14px;color:var(--muted);}
+    .metric p{margin:6px 0 0;font-size:18px;font-weight:600;}
+    canvas{background:#fff;border-radius:10px;padding:12px;}
+    footer{margin:28px 0;text-align:center;color:var(--muted);font-size:13px;}
+    @media (max-width:980px){
+      main{flex-direction:column;align-items:center;}
+      #right{width:92vw;}
+      #grid-wrap{height:min(72vw,640px);}
+    }
+  </style>
 </head>
 <body>
-<header>
-<h1>경로 탐색 시각화</h1>
-<div style="color:var(--muted);margin-top:6px">BFS · Dijkstra · A* — 탐색 과정과 성능 지표를 시각화합니다.</div>
-</header>
+  <header>
+    <h1>경로 탐색 시각화</h1>
+    <div style="color:var(--muted);margin-top:6px;">BFS · Dijkstra · A* 탐색 과정과 성능 지표를 시각화합니다.</div>
+  </header>
 
-<div class="container">
-  <div class="controls card" style="margin-bottom:14px;">
-    <div class="group">
-      <label for="size">그리드 크기</label>
-      <input id="size" type="number" value="30" min="5" max="60" style="width:84px">
+  <div class="container">
+    <div class="controls card" style="margin-bottom:14px;">
+      <div class="group">
+        <label for="size">그리드 크기</label>
+        <input id="size" type="number" value="30" min="5" max="60" style="width:84px">
+      </div>
+      <div class="group">
+        <label for="density">장애물 밀도</label>
+        <input id="density" type="number" value="0.2" step="0.01" min="0" max="0.6" style="width:84px">
+      </div>
+      <div class="group">
+        <label for="speed">속도 (ms) <span id="speedVal">12</span></label>
+        <input id="speed" type="range" min="2" max="60" value="12" style="width:140px">
+      </div>
+      <div class="group">
+        <label for="algo">알고리즘</label>
+        <select id="algo">
+          <option value="bfs">BFS</option>
+          <option value="dijkstra">Dijkstra</option>
+          <option value="astar">A*</option>
+        </select>
+      </div>
+      <div style="margin-left:auto;display:flex;gap:8px">
+        <button id="generateBtn">생성</button>
+        <button id="runBtn">실행</button>
+        <button id="resetBtn" class="secondary">초기화</button>
+      </div>
     </div>
-    <div class="group">
-      <label for="density">장애물 밀도</label>
-      <input id="density" type="number" value="0.2" step="0.01" min="0" max="0.6" style="width:84px">
-    </div>
-    <div class="group">
-      <label for="speed">속도 (ms)</label>
-      <input id="speed" type="range" min="2" max="60" value="12" style="width:140px">
-      <span id="speedValue" class="value-display">12</span>
-    </div>
-    <div class="group">
-      <label for="algo">알고리즘</label>
-      <select id="algo">
-        <option value="bfs">BFS</option>
-        <option value="dijkstra">Dijkstra</option>
-        <option value="astar">A*</option>
-      </select>
-    </div>
-    <div style="margin-left:auto;display:flex;gap:8px">
-      <button id="generateBtn">생성</button>
-      <button id="runBtn">실행</button>
-      <button id="resetBtn" class="secondary">초기화</button>
-    </div>
+
+    <main>
+      <div id="grid-wrap" class="card">
+        <div id="grid"></div>
+      </div>
+
+      <aside id="right">
+        <div class="card metrics">
+          <div class="metric">
+            <h3>실행 시간</h3>
+            <p id="timeMs">- ms</p>
+          </div>
+          <div class="metric">
+            <h3>방문 노드 수</h3>
+            <p id="visitedCount">-</p>
+          </div>
+          <div class="metric">
+            <h3>경로 길이</h3>
+            <p id="pathLen">-</p>
+          </div>
+          <div class="metric" style="min-width:100%">
+            <button id="downloadCsv" class="secondary" style="width:100%;">CSV 다운로드</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <canvas id="perfChart" height="220"></canvas>
+        </div>
+      </aside>
+    </main>
   </div>
 
-<main>
-<div id="grid-wrap" class="card"><div id="grid"></div></div>
-<aside id="right">
-  <div class="card metrics">
-    <div class="metric"><h3>실행 시간</h3><p id="timeMs">- ms</p></div>
-    <div class="metric"><h3>방문 노드 수</h3><p id="visitedCount">-</p></div>
-    <div class="metric"><h3>경로 길이</h3><p id="pathLen">-</p></div>
-    <div class="metric" style="min-width:100%">
-      <button id="downloadCsv" class="secondary" style="width:100%;">CSV 다운로드</button>
-    </div>
-  </div>
-  <div class="card"><canvas id="perfChart" height="220"></canvas></div>
-</aside>
-</main>
-</div>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    let grid = [], size = parseInt(document.getElementById('size').value);
+    let density = parseFloat(document.getElementById('density').value);
+    let speed = parseInt(document.getElementById('speed').value);
+    let startCell = null, endCell = null;
+    const gridEl = document.getElementById('grid');
+    const timeEl = document.getElementById('timeMs');
+    const visitedEl = document.getElementById('visitedCount');
+    const pathEl = document.getElementById('pathLen');
+    const downloadCsvBtn = document.getElementById('downloadCsv');
+    const speedVal = document.getElementById('speedVal');
 
-<script>
-let grid=[], size=30, density=0.2, speed=12;
-let startCell=null, endCell=null;
-let experiments=[];
+    // Chart.js 초기화
+    const ctx = document.getElementById('perfChart').getContext('2d');
+    const perfChart = new Chart(ctx, {
+      type:'line',
+      data:{
+        labels:[],
+        datasets:[
+          { label:'실행 시간 (ms)', data:[], borderColor:'#4c7fff', backgroundColor:'rgba(76,127,255,0.06)', tension:0.3 },
+          { label:'방문 노드 수', data:[], borderColor:'#74b9ff', backgroundColor:'rgba(116,185,255,0.06)', tension:0.3 },
+          { label:'경로 길이', data:[], borderColor:'#fdcb6e', backgroundColor:'rgba(253,203,110,0.06)', tension:0.3 }
+        ]
+      },
+      options:{ responsive:true, maintainAspectRatio:false, scales:{ y:{ beginAtZero:true } } }
+    });
 
-const gridEl=document.getElementById('grid');
-const timeEl=document.getElementById('timeMs');
-const visitedEl=document.getElementById('visitedCount');
-const pathEl=document.getElementById('pathLen');
-const downloadCsvBtn=document.getElementById('downloadCsv');
-const speedSlider=document.getElementById('speed');
-const speedValue=document.getElementById('speedValue');
+    let experiments = [];
 
-// Chart.js
-const ctx=document.getElementById('perfChart').getContext('2d');
-const perfChart=new Chart(ctx,{
-type:'line',
-data:{
-labels:[], datasets:[
-{label:'실행 시간 (ms)', data:[], borderColor:'#4c7fff', backgroundColor:'rgba(76,127,255,0.06)', tension:0.3},
-{label:'방문 노드 수', data:[], borderColor:'#74b9ff', backgroundColor:'rgba(116,185,255,0.06)', tension:0.3},
-{label:'경로 길이', data:[], borderColor:'#fdcb6e', backgroundColor:'rgba(253,203,110,0.06)', tension:0.3}
-]
-},
-options:{responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true}}}
-});
+    function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
+    function getSleepTime(){ return 62 - parseInt(document.getElementById('speed').value); } // 오른쪽 빠르게
+    function setSpeed(){ speed = parseInt(document.getElementById('speed').value); speedVal.textContent=speed; }
 
-function sleep(ms){ return new Promise(r=>setTimeout(r,ms)); }
-speedSlider.addEventListener('input', ()=>{ speed=parseInt(speedSlider.value); speedValue.textContent=speed; });
-
-function generateGrid(){
-  size=Math.max(5,Math.min(60,parseInt(document.getElementById('size').value)));
-  density=Math.max(0,Math.min(0.6,parseFloat(document.getElementById('density').value)));
-  gridEl.style.gridTemplateColumns=`repeat(${size},1fr)`;
-  gridEl.style.gridTemplateRows=`repeat(${size},1fr)`;
-  gridEl.innerHTML=''; grid=[]; startCell=null; endCell=null;
-  for(let r=0;r<size;r++){
-    grid[r]=[];
-    for(let c=0;c<size;c++){
-      const cell=document.createElement('div');
-      cell.className='cell'; cell.id=`cell-${r}-${c}`;
-      const isWall=Math.random()<density && !(r===0&&c===0) && !(r===size-1&&c===size-1);
-      if(isWall){ cell.classList.add('wall'); grid[r][c]=1; } else grid[r][c]=0;
-      cell.addEventListener('click',()=>{
-        if(!startCell){ startCell={r,c}; cell.classList.add('start'); grid[r][c]=0; return; }
-        if(!endCell && !(startCell.r===r && startCell.c===c)){ endCell={r,c}; cell.classList.add('end'); grid[r][c]=0; return; }
-        cell.classList.toggle('wall'); grid[r][c]=cell.classList.contains('wall')?1:0;
-      });
-      gridEl.appendChild(cell);
+    function generateGrid(){
+      size = Math.max(5, Math.min(60, parseInt(document.getElementById('size').value)));
+      density = Math.max(0, Math.min(0.6, parseFloat(document.getElementById('density').value)));
+      setSpeed();
+      gridEl.style.gridTemplateColumns = `repeat(${size},1fr)`;
+      gridEl.style.gridTemplateRows = `repeat(${size},1fr)`;
+      gridEl.innerHTML=''; grid=[]; startCell=null; endCell=null;
+      for(let r=0;r<size;r++){
+        grid[r]=[];
+        for(let c=0;c<size;c++){
+          const cell=document.createElement('div');
+          cell.className='cell';
+          cell.id=`cell-${r}-${c}`;
+          const isWall=Math.random()<density && !(r===0 && c===0) && !(r===size-1 && c===size-1);
+          if(isWall){ cell.classList.add('wall'); grid[r][c]=1; } else grid[r][c]=0;
+          cell.addEventListener('click', ()=>{
+            if(!startCell){ startCell={r,c}; cell.classList.add('start'); grid[r][c]=0; return; }
+            if(!endCell && !(startCell.r===r && startCell.c===c)){ endCell={r,c}; cell.classList.add('end'); grid[r][c]=0; return; }
+            cell.classList.toggle('wall'); grid[r][c] = cell.classList.contains('wall')?1:0;
+          });
+          gridEl.appendChild(cell);
+        }
+      }
+      document.getElementById('cell-0-0').classList.add('start'); startCell={r:0,c:0};
+      document.getElementById(`cell-${size-1}-${size-1}`).classList.add('end'); endCell={r:size-1,c:size-1};
+      resetMetricsDisplay();
     }
-  }
-  document.getElementById('cell-0-0').classList.add('start'); startCell={r:0,c:0};
-  document.getElementById(`cell-${size-1}-${size-1}`).classList.add('end'); endCell={r:size-1,c:size-1};
-  resetMetricsDisplay();
-}
 
-function resetGrid(){ generateGrid(); experiments=[]; perfChart.data.labels=[]; perfChart.data.datasets.forEach(ds=>ds.data=[]); perfChart.update(); }
+    function resetMetricsDisplay(){ timeEl.textContent='- ms'; visitedEl.textContent='-'; pathEl.textContent='-'; }
 
-function resetMetricsDisplay(){ timeEl.textContent='- ms'; visitedEl.textContent='-'; pathEl.textContent='-'; }
+    function neighbors(r,c){
+      const dirs=[[1,0],[-1,0],[0,1],[0,-1]];
+      const res=[];
+      for(const [dr,dc] of dirs){
+        const nr=r+dr, nc=c+dc;
+        if(nr>=0 && nr<size && nc>=0 && nc<size && grid[nr][nc]===0) res.push([nr,nc]);
+      }
+      return res;
+    }
 
-function neighbors(r,c){
-  const dirs=[[1,0],[-1,0],[0,1],[0,-1]]; const res=[];
-  for(const [dr,dc] of dirs){ const nr=r+dr, nc=c+dc; if(nr>=0&&nr<size&&nc>=0&&nc<size&&grid[nr][nc]===0) res.push([nr,nc]); }
-  return res;
-}
+    async function animateSteps(steps){
+      for(const [r,c] of steps){
+        const el=document.getElementById(`cell-${r}-${c}`);
+        if(el && !el.classList.contains('start') && !el.classList.contains('end')) el.classList.add('visited');
+        await sleep(getSleepTime());
+      }
+    }
 
-async function animateSteps(steps){
-  for(const [r,c] of steps){
-    const el=document.getElementById(`cell-${r}-${c}`);
-    if(el && !el.classList.contains('start') && !el.classList.contains('end')) el.classList.add('visited');
-    await sleep(speed);
-  }
-}
+    async function renderPath(path){
+      for(const [r,c] of path){
+        const el=document.getElementById(`cell-${r}-${c}`);
+        if(el && !el.classList.contains('start') && !el.classList.contains('end')) el.classList.add('path');
+        await sleep(Math.max(8,getSleepTime()));
+      }
+    }
 
-function buildPath(parent){
-  const path=[]; let key=`${endCell.r},${endCell.c}`; if(!(key in parent)) return path;
-  while(parent[key]){ const [r,c]=parent[key]; path.push([r,c]); key=`${r},${c}`; } return path.reverse();
-}
+    function buildPath(parent){
+      const path=[]; let key=`${size-1},${size-1}`;
+      if(!(key in parent)) return path;
+      while(parent[key]){ const [r,c]=parent[key]; path.push([r,c]); key=`${r},${c}`; }
+      return path.reverse();
+    }
 
-async function renderPath(path){ for(const [r,c] of path){ const el=document.getElementById(`cell-${r}-${c}`); if(el && !el.classList.contains('start') && !el.classList.contains('end')) el.classList.add('path'); await sleep(Math.max(8,speed)); } }
+    async function runBFS(){
+      const sr=startCell.r, sc=startCell.c, er=endCell.r, ec=endCell.c;
+      const q=[[sr,sc]], visited=new Set([`${sr},${sc}`]), parent={}, steps=[];
+      const t0=performance.now();
+      while(q.length){
+        const [r,c]=q.shift();
+        if(!(r===sr && c===sc)) steps.push([r,c]);
+        if(r===er && c===ec) break;
+        for(const [nr,nc] of neighbors(r,c)){
+          const k=`${nr},${nc}`;
+          if(!visited.has(k)){ visited.add(k); parent[k]=[r,c]; q.push([nr,nc]); }
+        }
+      }
+      const t1=performance.now();
+      await animateSteps(steps);
+      const path=buildPath(parent);
+      await renderPath(path);
+      return {runtime:t1-t0, visited:visited.size, pathLen:path.length};
+    }
 
-async function runBFS(){ const sr=startCell.r,sc=startCell.c,er=endCell.r,ec=endCell.c; const q=[[sr,sc]]; const visited=new Set([`${sr},${sc}`]); const parent={}; const steps=[]; const t0=performance.now(); while(q.length){ const [r,c]=q.shift(); if(!(r===sr&&c===sc)) steps.push([r,c]); if(r===er&&c===ec) break; for(const [nr,nc] of neighbors(r,c)){ const k=`${nr},${nc}`; if(!visited.has(k)){ visited.add(k); parent[k]=[r,c]; q.push([nr,nc]); } } } const t1=performance.now(); await animateSteps(steps); const path=buildPath(parent); await renderPath(path); return {runtime:t1-t0,visited:visited.size,pathLen:path.length}; }
+    async function runDijkstra(){
+      const sr=startCell.r, sc=startCell.c, er=endCell.r, ec=endCell.c;
+      const dist=Array.from({length:size},()=>Array(size).fill(Infinity));
+      dist[sr][sc]=0;
+      const pq=[[0,sr,sc]]; const parent={}, visitedSet=new Set(), steps=[];
+      const t0=performance.now();
+      while(pq.length){
+        pq.sort((a,b)=>a[0]-b[0]);
+        const [d,r,c]=pq.shift();
+        const key=`${r},${c}`;
+        if(visitedSet.has(key)) continue;
+        visitedSet.add(key);
+        if(!(r===sr && c===sc)) steps.push([r,c]);
+        if(r===er && c===ec) break;
+        for(const [nr,nc] of neighbors(r,c)){
+          const nd=d+1;
+          if(nd<dist[nr][nc]){ dist[nr][nc]=nd; parent[`${nr},${nc}`]=[r,c]; pq.push([nd,nr,nc]); }
+        }
+      }
+      const t1=performance.now();
+      await animateSteps(steps);
+      const path=buildPath(parent);
+      await renderPath(path);
+      return {runtime:t1-t0, visited:visitedSet.size, pathLen:path.length};
+    }
 
-async function runDijkstra(){ const sr=startCell.r,sc=startCell.c,er=endCell.r,ec=endCell.c; const dist=Array.from({length:size},()=>Array(size).fill(Infinity)); dist[sr][sc]=0; const pq=[[0,sr,sc]]; const parent={}; const visitedSet=new Set(); const steps=[]; const t0=performance.now(); while(pq.length){ pq.sort((a,b)=>a[0]-b[0]); const [d,r,c]=pq.shift(); const key=`${r},${c}`; if(visitedSet.has(key)) continue; visitedSet.add(key); if(!(r===sr&&c===sc)) steps.push([r,c]); if(r===er&&c===ec) break; for(const [nr,nc] of neighbors(r,c)){ const nd=d+1; if(nd<dist[nr][nc]){ dist[nr][nc]=nd; parent[`${nr},${nc}`]=[r,c]; pq.push([nd,nr,nc]); } } } const t1=performance.now(); await animateSteps(steps); const path=buildPath(parent); await renderPath(path); return {runtime:t1-t0,visited:visitedSet.size,pathLen:path.length}; }
+    async function runAstar(){
+      const sr=startCell.r, sc=startCell.c, er=endCell.r, ec=endCell.c;
+      const g={}; g[`${sr},${sc}`]=0;
+      const pq=[[0,sr,sc]]; const parent={}, visitedSet=new Set(), steps=[];
+      function h(r,c){ return Math.abs(er-r)+Math.abs(ec-c); }
+      const t0=performance.now();
+      while(pq.length){
+        pq.sort((a,b)=>a[0]-b[0]);
+        const [f,r,c]=pq.shift();
+        const key=`${r},${c}`;
+        if(visitedSet.has(key)) continue;
+        visitedSet.add(key);
+        if(!(r===sr && c===sc)) steps.push([r,c]);
+        if(r===er && c===ec) break;
+        for(const [nr,nc] of neighbors(r,c)){
+          const g2=g[`${r},${c}`]+1;
+          if(!(`${nr},${nc}` in g) || g2<g[`${nr},${nc}`]){
+            g[`${nr},${nc}`]=g2; parent[`${nr},${nc}`]=[r,c];
+            const f2=g2+h(nr,nc); pq.push([f2,nr,nc]);
+          }
+        }
+      }
+      const t1=performance.now();
+      await animateSteps(steps);
+      const path=buildPath(parent);
+      await renderPath(path);
+      return {runtime:t1-t0, visited:visitedSet.size, pathLen:path.length};
+    }
 
-async function runAstar(){ const sr=startCell.r,sc=startCell.c,er=endCell.r,ec=endCell.c; const g={}; g[`${sr},${sc}`]=0; const pq=[[0,sr,sc]]; const parent={}; const visitedSet=new Set(); const steps=[]; function h(r,c){return Math.abs(er-r)+Math.abs(ec-c);} const t0=performance.now(); while(pq.length){ pq.sort((a,b)=>a[0]-b[0]); const [f,r,c]=pq.shift(); const key=`${r},${c}`; if(visitedSet.has(key)) continue; visitedSet.add(key); if(!(r===sr&&c===sc)) steps.push([r,c]); if(r===er&&c===ec) break; for(const [nr,nc] of neighbors(r,c)){ const g2=g[`${r},${c}`]+1; if(!(`${nr},${nc}` in g)||g2<g[`${nr},${nc}`]){ g[`${nr},${nc}`]=g2; parent[`${nr},${nc}`]=[r,c]; const f2=g2+h(nr,nc); pq.push([f2,nr,nc]); } } } const t1=performance.now(); await animateSteps(steps); const path=buildPath(parent); await renderPath(path); return {runtime:t1-t0,visited:visitedSet.size,pathLen:path.length}; }
+    async function runSelected(){
+      if(!startCell || !endCell){ alert('출발과 도착을 먼저 설정하세요.'); return; }
+      for(let r=0;r<size;r++) for(let c=0;c<size;c++){
+        const el=document.getElementById(`cell-${r}-${c}`);
+        if(el){ el.classList.remove('visited','path'); }
+      }
+      const algo=document.getElementById('algo').value;
+      let result=null;
+      if(algo==='bfs') result=await runBFS();
+      else if(algo==='dijkstra') result=await runDijkstra();
+      else result=await runAstar();
 
-async function runSelected(){
-  if(!startCell||!endCell){ alert('출발과 도착을 먼저 설정하세요.'); return; }
-  for(let r=0;r<size;r++) for(let c=0;c<size;c++){ const el=document.getElementById(`cell-${r}-${c}`); if(el){ el.classList.remove('visited','path'); } }
-  let result=null; const algo=document.getElementById('algo').value;
-  if(algo==='bfs') result=await runBFS();
-  else if(algo==='dijkstra') result=await runDijkstra();
-  else result=await runAstar();
+      timeEl.textContent=result.runtime.toFixed(2)+' ms';
+      visitedEl.textContent=result.visited;
+      pathEl.textContent=result.pathLen;
 
-  timeEl.textContent=result.runtime.toFixed(2)+' ms';
-  visitedEl.textContent=result.visited;
-  pathEl.textContent=result.pathLen;
+      const idx=perfChart.data.labels.length+1;
+      perfChart.data.labels.push(`${idx}`);
+      perfChart.data.datasets[0].data.push(result.runtime.toFixed(2));
+      perfChart.data.datasets[1].data.push(result.visited);
+      perfChart.data.datasets[2].data.push(result.pathLen);
+      perfChart.update();
 
-  const idx=perfChart.data.labels.length+1;
-  perfChart.data.labels.push(`${idx}`);
-  perfChart.data.datasets[0].data.push(result.runtime.toFixed(2));
-  perfChart.data.datasets[1].data.push(result.visited);
-  perfChart.data.datasets[2].data.push(result.pathLen);
-  perfChart.update();
+      experiments.push({algorithm:algo, size:size, density:density, runtime_ms:result.runtime, visited_nodes:result.visited, path_length:result.pathLen, timestamp:new Date().toISOString()});
+      downloadCsvBtn.style.display='inline-block';
+    }
 
-  experiments.push({algorithm:algo,size:size,density:density,runtime_ms:result.runtime,visited_nodes:result.visited,path_length:result.pathLen,timestamp:new Date().toISOString()});
-  downloadCsvBtn.style.display='inline-block';
-}
+    function downloadCSV(){
+      if(experiments.length===0){ alert('저장할 데이터가 없습니다.'); return; }
+      const header=['algorithm','size','density','runtime_ms','visited_nodes','path_length','timestamp'];
+      const rows=experiments.map(e=>[e.algorithm,e.size,e.density,e.runtime_ms.toFixed(2),e.visited_nodes,e.path_length,e.timestamp].join(','));
+      const csv=[header.join(','),...rows].join('\n');
+      const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+      const url=URL.createObjectURL(blob);
+      const a=document.createElement('a');
+      a.href=url; a.download='pathfinding_results.csv'; a.click();
+      URL.revokeObjectURL(url);
+    }
 
-function downloadCSV(){
-  if(experiments.length===0){ alert('저장할 데이터가 없습니다.'); return; }
-  const header=['algorithm','size','density','runtime_ms','visited_nodes','path_length','timestamp'];
-  const rows=experiments.map(e=>[e.algorithm,e.size,e.density,e.runtime_ms.toFixed(2),e.visited_nodes,e.path_length,e.timestamp].join(','));
-  const csv=[header.join(','), ...rows].join('\n');
-  const blob=new Blob([csv], {type:'text/csv;charset=utf-8;'});
-  const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download='pathfinding_results.csv'; a.click(); URL.revokeObjectURL(url);
-}
+    document.getElementById('generateBtn').addEventListener('click',()=>{ generateGrid(); });
+    document.getElementById('resetBtn').addEventListener('click',()=>{ generateGrid(); experiments=[]; });
+    document.getElementById('runBtn').addEventListener('click',async()=>{ await runSelected(); });
+    document.getElementById('size').addEventListener('change',()=>{ document.getElementById('size').value=Math.max(5,Math.min(60,parseInt(document.getElementById('size').value))); });
+    document.getElementById('speed').addEventListener('input',setSpeed);
+    downloadCsvBtn.addEventListener('click',downloadCSV);
 
-document.getElementById('generateBtn').addEventListener('click',()=>{generateGrid();});
-document.getElementById('resetBtn').addEventListener('click',()=>{resetGrid(); experiments=[];});
-document.getElementById('runBtn').addEventListener('click',async()=>{await runSelected();});
-document.getElementById('size').addEventListener('change',()=>{ document.getElementById('size').value=Math.max(5,Math.min(60,parseInt(document.getElementById('size').value))); });
-document.getElementById('density').addEventListener('input',()=>{ document.getElementById('density').value=Math.max(0,Math.min(0.6,parseFloat(document.getElementById('density').value))); });
-
-generateGrid();
-</script>
+    generateGrid();
+  </script>
 </body>
 </html>
